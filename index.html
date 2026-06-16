@@ -328,6 +328,175 @@ input[type=range]{width:100%;accent-color:var(--blue);cursor:pointer;}
 </style>
 </head>
 <body>
+
+<!-- ═══ LOGIN SCREEN ═══ -->
+<div id="login-screen" style="
+  position:fixed;inset:0;z-index:9999;
+  background:linear-gradient(135deg,#07090f 0%,#0d1117 50%,#0a1628 100%);
+  display:flex;align-items:center;justify-content:center;
+  font-family:'Segoe UI',system-ui,sans-serif;">
+
+  <div style="width:100%;max-width:400px;padding:0 24px">
+
+    <!-- Logo & Branding -->
+    <div style="text-align:center;margin-bottom:32px">
+      <div style="margin:0 auto 16px;width:220px">
+        <img src="data:image/png;base64,/9j/4AAQSkZJRgABAQAAAQABAAD/4gHYSUNDX1BST0ZJTEUAAQEAAAHIAAAAAAQwAABtbnRyUkdCIFhZWiAH4AABAAEAAAAAAABhY3NwAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAQAA9tYAAQAAAADTLQAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAlkZXNjAAAA8AAAACRyWFlaAAABFAAAABRnWFlaAAABKAAAABRiWFlaAAABPAAAABR3dHB0AAABUAAAABRyVFJDAAABZAAAAChnVFJDAAABZAAAAChiVFJDAAABZAAAAChjcHJ0AAABjAAAADxtbHVjAAAAAAAAAAEAAAAMZW5VUwAAAAgAAAAcAHMAUgBHAEJYWVogAAAAAAAAb6IAADj1AAADkFhZWiAAAAAAAABimQAAt4UAABjaWFlaIAAAAAAAACSgAAAPhAAAts9YWVogAAAAAAAA9tYAAQAAAADTLXBhcmEAAAAAAAQAAAACZmYAAPKnAAANWQAAE9AAAApbAAAAAAAAAABtbHVjAAAAAAAAAAEAAAAMZW5VUwAAACAAAAAcAEcAbwBvAGcAbABlACAASQBuAGMALgAgADIAMAAxADb/2wBDAAUDBAQEAwUEBAQFBQUGBwwIBwcHBw8LCwkMEQ8SEhEPERETFhwXExQaFRERGCEYGh0dHx8fExciJCIeJBweHx7/2wBDAQUFBQcGBw4ICA4eFBEUHh4eHh4eHh4eHh4eHh4eHh4eHh4eHh4eHh4eHh4eHh4eHh4eHh4eHh4eHh4eHh4eHh7/wAARCACKAV4DASIAAhEBAxEB/8QAHAABAAIDAQEBAAAAAAAAAAAAAAUGAwQHAgEI/8QARBAAAQMDAgMFBQQIAwcFAAAAAQACAwQFERIhBhMxB0FRYYEUInGRsTJCdKEVIzU2crLB0TNSYhYXJHOCwvBDVWOSk//EABsBAQACAwEBAAAAAAAAAAAAAAABAgMEBQYH/8QAMhEAAgIBBAECBQEIAgMAAAAAAAECAxEEEiExQRNRBWGhsfBxBhQiM1KRwdEyNEKB4f/aAAwDAQACEQMRAD8A/GSIiAIiIAiIgCIvUbHyPaxjS5zjgADJJQHlERAEREAREQBERAEREAREQBERAEREAREQBERAEREAREQBERAEREAREQBERAEREAREQBERAEREAREQBW3sztntV1fXyNzHSj3fN56fIZ/JVMAk4AySuxcJ2z9E2OCmc3ExGub+I9R6dPRb/wAPp9S3L6Rpa6306sLtnM+Lrf8Aoy/1NO0Yjc7mR7baXb49OnoohdE7U7fzKKnuLAS6J3Lf/CdwfQ/Vc7WHV1elc4+DLpbfUqTCLfsdnut8r20Fmt1VX1TtxFTxF7seO3Qea6LY+w7i2phuNVdvZ7ZDamRzVkUjyZeWW63aNILS4M3xnqQFzrtXRR/MkkbtdNln/FZOVqSoLFea+hqq6jtdZPSUjNdTOyFxZE3BOXOAwNhlfoaDs64GsV7sFpreEOJI5J2z1VVXzZqsRshIGnkHAw9zTvHnZuRuqt2kdolRYf8AaKx8PcTV9xku1ZPHWCpgYBTQNBiaxj2nOrDemGgDAIzlaEficr5KNEM58vrvHjPs/obD0irWbH/b9Png5hf7NZ7TZaCWO/w3O5VkTZnQUjDyqZh30ve7BMncWhu3j419fXOLnFziS4nJJO5XxdSEXFYbyakmm+FgIiK5UIiIAiIgCIiAIiIAiIgCIiAIiIAiIgCIiAIiIAiIgCIiAIiIAiIgCIiAIi3ILXcJ6Cavio5nUkIzJNpwxu4HXpnJGyhtLsmMXLpEpwFbRceIIzI3MNOOa/I2OOg+f0K6wq72f2s26xMmkbiarxK7yb90fLf1ViXptBT6VSz2+Tz2tt9S146RqXmlZW2qppZBlskZHwPcfmnZn2Y8H3/sh4g4ludfXNu9uFRE6NsjGxwyMbqYQ041asgbkAnI7srbO4wVHcF1HEls44fwnYI6Oam4nmgM8VTK6JpED+Y7D2kFuWhwOM5DiME4XG/aai2WnVtUtri1l/Lz9MnR+B3Qjc65rKfX6nbez1t84VpLTwlZm8N3iT2D2iYwj2UgMcxjtbma9T8vOCW76D3qtVlI/ivhW6VF34RvVvqrvcnSSVtJMJIxSiWMPGqEEv8A1cWwcwg6c5wQtnjC22/h+pv/ABneuBaq2zNt7G001rfmOF7XA6nOilYTqe5mTpbsxwJ7zz/tM7amxcGW7gvgarkbCyhijrrkGuY95LBqYzJy3fOXZznIB7z830untvsU6Y5bazLrHl8pte3GOT2V1sK4uNjwl0vp5WT32rdrL7Pea628F3qquBko20zbrPITNTNL3OkjYSxrs/YGolxGPHccFe5z3l73FznHJJOSSviL2Wk0delhtgv1flnCuvndLMgiy0sEtTUx08Ddcsjg1jc4yStu62W5WuNkldTGFrzpadQOT6FbihJrclwa7nFPDfJHopK02O6XSJ0tDSmVjTpLi4NGfDcoyxXN9zfbWU4dVMbqcwSN2HxzjvVlVNpPD5I9SCbWVwRqLbultrLZUNgroeVI5uoDUDt6fBbFrsV1udOZ6Gl5sYdpJ1tG/qfNQq5uW1LkOyCjuzwRiL3NG+GZ8Ug0vY4tcPAhSlDw3eq6kZVU1EXwvBLXa2jO+OhKRrlN4iskynGKzJ4IhF9c0tcWuBDgcEHuUja7HdLnA6ehpubG12knW0YPXvPmojCUniKyxKUYrLeCNRZKiKSCeSCVumSNxa4Z6ELGqtYLdhFI2my3O6xySUNMZWxkBx1Bu5+JWrX0lRQ1b6WqjMczMamk5xkZ7lZwko7muCqnFvanyYEW5arZW3SZ0NDDzXsbqcNQGBnHevNzt9Zbaj2etgMUmkOAJByPiE2S27scDfHdtzyaqKRtNkud1jfJQ03Naw6XHW1uD6ladVBLTVMlPO3TLE4se3OcEdUcJJbmuApxbwnyYkW/abPcbrzDQUxlEWNZ1BuM9Op8lhuVDVW6qdS1kRilaAS3IOx8wjhJR3Y4G+LltzyayLatlvq7lUGnooubKGlxbqA2Hx+K+3S21tsnbDXU7oXubqAJBBHxCbJbd2OBvju255NRFnoaSorqplLSxGWZ/wBloWzdLLcrZyvbablc0kM99pyfQ+aKEnHclwHOKe1vkj0UrcuHbvbqV1TWUnLiaQC7W09du4rTttDVXGqFLRxc2UgkNyBsPipdc09rXJCsg1uT4NZFu3a111qkZHXQclzxqaNQOR6FaSrKLi8NFoyUllBERQSERbVrqKamrGTVdCytiHWF73MB9WnKhvCJik2k3g8UVJVVs7YKSnlnlccBsbS4/krpYuzK81mmS4yxW+Ijoffk+Q2/NWvhLjfhMwtpY4GWZx+45gDCf4h9ThXeCaGohbNBKyWNwy17HBzT8CFydTrroPCjt/P7HsvhnwHRXLfKzf8AJcf38/YrNi4C4dtYD3Uvtsw/9Spw75N6fkoztEn/AEhdbbwnT+7C4ioq9G2I250t8uh2/hV5nljggknmcGRxtL3uPc0DJPyXOeETLcam4cSVLdMtwlIiH+SJpwB+QH/SFl+Daees1SlN5SI/ajU0/DNB6NCUXPjj2/P8lgaA1oa0AADAA7l9RF9EPkQUHxV7VRex8QW/attNQyriOM4LHB3y2yfgpxeZo2SxPikaHMe0tcD3g9Vh1FMbqpVy6ZkptdVimvB67d+3aTii3/7PcJ8+ktc8Q9tneNMs2RkxDwaOh/zfDrwdbV2o32+5VFFJkmGQtzjqO4+o3WqvFaTQ1aKHpVLC/wA/M9ZdqJ6iW+TyERFsmIkuFv3kt34ln1XQeObXUXf9HUkAwDMTI/uY3G5XP+Ff3kt34hn1XVb/AHWns9vfV1ByejGDq93guvoIxlRNTfBy9bKUbouPZE8Q3Gm4WsUVHRNHOc0shb4eLz/51VZ7NZHy8TySSOLnvheXOPUnIVo4ptsPEfD8dVRkOma3mwO8QRu31+oVS7Nnti4nEcnuudE9oB8euPyKvfuWpr/p4wUp2vTz/q8mbtS/b8P4cfzOU/2W/u/L+Jd/K1RXadbqyW5QVkVPJJCYgwuY3OCCeuPip3s8o6ih4eIqo3ROkldIGuGCG4AyfDopphJa2TwRbKP7nFZOe1NNJW8STUsX25apzB5ZcV16nFNRRU1C1zWe7oib3uDRv+SpXANC2r4huF2IzFHI4RHxc4nf5fVWW62eetvdFcWXAwtpSMRCPOrf3t8942VtFXKEHYllt/TJXVzU5KDeEl9Sg9oNu9g4gkkY3EVSOa3HcfvD57+qs/ZX+w6n8Qf5Wra7Rbd7bYXVDG5lpTzB/D97+h9Fq9lf7DqPxJ/laq10+lreOnyWnb6mk+a4KJxB+3K78Q/+YrRU7fLLd5LxWSR2yrex07y1zYXEEZ6r5wpaJaziSKkqYXsELuZOxzcEAdx+JwPVcyVM5W7cds6MbYxrznpHQuFaOOzcOQMnIjc7D5S7bDnED+wVd7U7dvT3SMf/ABSfVp+o+Ss/E9qkvFC2kZV+zN5ge46NROOg6j/wL3dbea+wSUFRI2SV0WNeMZeBs7HxXdtoc6nUlwlx+pxqrttitb5b5KX2U/ter/D/APcFbuK7JFe7cYvdbUR5dC89x8D5FVLstY5l7rGPBa5sOHA9x1BSt5v7rNxoGTOJo5oWCQf5Tk+8FraaUI6VKzpvBsaiM5aluHaWT72Ywy09JcIJmFkkdRpc09QcKkcUfvHcfxL/AOYrsULYTmeIMPNAcXt+9tsc9+y5gLcbn2gVFKRmP2t75P4Q4k/29VTWUONVdS55LaW5StnY/YufBtJFZ+GYpahzYzKOdK53dnoPlhRPanbtdNT3ONu8Z5UnwPQ/PPzVj4jtsl1tpoI6r2Vr3AvcGasgd2Mjvx8lkqbcamwutlVKJXOg5bpMYy4DZ2PjgrcsocqnSlwlw/masLttitb5zz+hQOzD943/AId31artxXZo71bXQbNqI/fhd4Hw+BVM7OYZIOK5oJW6Xxwva4eBDmhT3Et7fZuLaRznE0stOGzt/wCp2HfEf3WrpZQjpcWdN4NjUKUtTmHaWTPwJw+bVSGpqmYrJhuP8jfD+pWh2pfYtf8AzX/9q9zcQC4ca0FBSSB1JC92pzTtI7SfyCx9qjg1ltce6R5+ita6/wB1lGvpPH2IrU/3iMp9vn7kr2j/ALrVP8bP5gqb2b/vTF/yn/RXfjGnlunC8zaNvNc8MkYG76hkHb0VT7N7dWtv3tUlNLHFHG4Fz2kDJ2xuq6mLerg0vb7k6eSWlmm/cy9q/wC0aL/lO+qpSuXarKx12pYmkFzIcuHhk7fRU1c/Xf8AYkb+j/kxCIi1DZCIiALdtd1uVrk5lvrp6YnqI3kA/EdD6rSRQ0msMtCcoPdF4ZeTxpfeI7eOHJYoObWPax1QwaTozl2R07uoxtlXulgjpqaKnhbpjiYGNHkBhUTsstuqae6yN2YOVF8T9o/LA9Sr+u78J0saa3JLGTk/GNfbqrUrJZ2rHIRYquohpad9RUSNjiYMuc47BVSn4+tz6t8c1LPHDqwyUYdkeJHd6ZXQsvrqaU3jJza6bLE3FZwXBFqW652+4t1UVXFN4hp94fEdQttZIyUllMxtNPDOd9qdv5ddBcmD3Zm8t5/1N6fl9FS12DjKg/SPD1TC1uqRg5kf8Td/pkeq4+vPfEatl2V0zu6C3fVj2CIi0DdNm11RobjT1gYHmGQP0k4zg9FL8UcSvvtPDE+kbByn6gQ/VnbHgoqz0ra260tG9zmtmlawlvUAnCNoKqWYspqeWUa3MaWtzkt6/lhZ4TsVbjHpmGUa3NSl2iY4Z4rqbLRvpPZxUxl2pgc/To8e4qNutz9qvBuVLB7FKXB+GPzh/wDmGwXqgs9XUXKShmhlikjjc9wLNxhpI+ZwPVakdFVvqH07KeQys+23Tu34+CmU7nBRfS6IjCpTcl35Lhb+0CVkQZXUIleB9uN+nPoVo8QcaVdxpn0tLAKSJ4w869TnDwzthVx1HVNqfZ3U8gmxq0adyMZz8ML66irG41U0wy0PALDu0nAPwJ2WSWr1Eo7W2UWmojLckWCwcXGz2xlFFbmP0kuc8y41E95GPgPRQsl3uj5HPNwqsuJJxK7H1WGqoqulLBUU0sRf9gObjPwX2ooaynjMk1NLGwHBLm9D4HwWOVtzSi84ReNdSbkvJY7dxrUU9rZQ1NGKvDS1z3ynLgfHY92y1+GuKX2Sjlpo6JsrXymQEyYxkAY6eSjay1S0oopJIpyydrS7DcEEuI0jzwFgFDUT1s1PSU07zG53ulvvNAP3vBZHfqItc8rooqaGnxwy3f7w5v8A2tn/AOx/so63cWijuFdXNtrXy1bw7Jl+wAOnTdV99FVsqfZX00rZsE8stOcYznHwX2a31sNKKqWlmZCcYe5pA36I9VqG8t9fL/4QtNQlhLv5m7duILjXV8lU2pnp2uxpjZKQGjC3uH+Lq22RSxzsdWh5BBklOW+O+CoUW+uMPO9ll5enVnT93x+HmvUtIxlop60OdrlmfGR3YaGn+qpG26MnPPPZeVdMo7McEvbuJxQ3yrucVvb/AMS3Bj5vQ5BJzjvI/NR3Ed2debj7Y6EQnQGaQ7V0z/da1tphV1jIXOLI93SOAzpaBkn5L3XUYprl7OC6SNxa6Nw6vY7BaR5kEKJWWyrw3xn6kxrrjPKXOPoTXDvGFVaaD2N9OKqNp/Vl0mksHh0Oy8WnicW+619xFvbJLVvJ3lxoBOSOm/d8lDmgqZap8VNS1D8SmNrSzLs77HHfgL5T26uqHBsNJNISM7N88fUEKyvvW1J9dcFXTS8trvs371xFcbjcHVTJ5qVpADY45ThuFtcP8W11rEzZxJXNkwQJJj7pHhnKghTVBqvZRBJz9Wnl6Tqz4YXusoayjc0VVNLEX/Z1Nxn4KquuUvUTeSzqqcdjSwTNNxMKfiOa8R29oM0eh0Qk2ztvnHktPie9OvdbHUvpxCWR6NIdqzuT4ea8W+zVlRXwQTU88Mck3Kc/ln3T3+oWlWU8tLUvgmY5jmno4YOO5TOy5wxLpv6kQrqU8x7S+hnslebZdIK4RCUxEnQTjOxHX1UjxVxG++tga6kEHJJOz9Wc48h4KBRYldNQcE+GZHVBzU2uUWXhvi6stMApZYhVU7fstLsOb5A+Cl63tBJiLaO3aZCNnSyZA9AN/mqGizQ1t0I7VLgxS0lMpbmjNW1U9bVSVVTIZJZDlzisKItZtt5ZsJJLCCIigkIiIAvUTHyyNjjaXPeQ1oHeSvKtfZrbBV3h1bIzMVKMjPQvPT5bn5LLTW7ZqC8mO2xVwcn4OgWOgZbLVT0TMfq2AOI+87vPzWa4VlPQUj6qqkEcTBkk/Qea8XSvpbZRPq6uQMjb83HwHiVyjiW/VV7qy+QmOBp/VQg7N8z4ld/U6qGmgorvwjh6fTy1Etz68sycVcQ1N7qce9HSMOY4v6nzUIiLz1lkrJbpPk7sIRhHbHo9RvfG8Pjc5jhuC04IVhtXGV5otLJZG1cY7pftf/br88quIprtnW8weBOqFixJZOoWvje01eGVQko3nrrGpnzH9QqBxHTRUl5qI6d7JIHO1xOYcgtO438unoo5Fmu1c74qM+15MNOmjTJuHkIiLVNkk+Ff3kt34ln1W1XSvZw0Y2yYD7jLqaD1AazGVBtJaQ5pII6EIST3rLGzbDaY5V5luLPSO5lytWXBz32x7Bk9TpkAHx6LDRU4bZamhlpJX1cdQJJYWy6HlmkY7jnBzt5qu5K+gkHIJz4q6v8Al+YKej8y02uURXW3UppTTGITPHMmD3NDmH3TsMbjOPPzUXaKmUUt2mMzhK+mA1E7nMjcqKyc5zuvih3vj/39sE+ivt98k1b2R1FnpaeablMdcMas/YBaMlZ6SDlQXNjqN0GaZ4brkyXYIPQ9emchV5fSSTkklI3JeA6m/JOTRSOFmqWszCyNjHPB2DuY7YrNWskrILjTUXvz/pCSSWNp96Rn3ceIBz81XcnGM7ICQcgkHxU+susfmCPSfeS12nNNXWimqXD2uITlwJyWMLPdafUOOPNRNrldLQ3gzSFzn04cdR+07mN3+PVRWTnOd18UO/pY9/tglU/P8zktFuo2UvEFKGQOfCHtxVOkw14I+WPJaFRBK/hqIxsLhBVS8zH3MhuM/JQ+TgDJwEyfFS7k01j84/0QqnlPP5+MlbcYKS0z1FQ17jVHkMDHAHSMFx3B/wBI+a2Hmnq6SgqacPa6kmbA9r3guLSdTTsB/qHyUCiqrsLGOCzqy855LDc6l7aG7COXTzbkc6T1b735dFiqKesq7Ha46bVKGNkJiadwTI73sf1UGtieqdLT00OnTyGOaCD1y4u/qrespZ3e3+clfSccY9/8YLFLJqqZKUTMNxNubCX6xvIHZLdXjp29MLRZFNRWGogrmmMzTRup4nH3sgnU7HcMHHqoNfSSTkkk+aO/POAqccZLLLUl/aEx80wMcdcAC4+61od9FCXalnpK6WOoidG4uLgD3jPVai+kknJOVSdm5PPvkvGva1j2wfERFiMgREQBERAEREAREQBdSsxpeFeFIpK46JH/AKx7R9pzz90DyGB6LnNmfSw3GKesBdDCeYWDq8jo31OPRZL7dqu8Vrqmqft0ZGPssHgFt6a5UJz/APLpGrqKnc1Dx5PfEV6qr1Wmec6Y27RRA7MH9/NRiItac5Te6T5NiMVBbY9BERVLBERAEREAREQGSmjE1QyIu0hzsE4zgLabRRzxNmgk5cZLw7nHppAOdh4HwWmxzmPD2Etc05BHcVssr52yazyzhrmhvLaGjPU6cYKvFx8lJKXgyG01fKkl0tLWE7jOHAAEkHGOhB3wvJts2qdrZI3GEO141Yy0EkZxjIAKwyVdRIxzHvDg52rdo2O3TbboOngvorKkCT3weaXFxLATlwwcbbZHgrZr9iMT9zY/RU0ksjaeRkrWBvvAHBLhkDp5HrssM1JyaQyvkaX6mgsHUBzSRn5DovBq5y1zS5pDmhpBY3uGB3dcd/VfJamaWERPcC0Y+6ATgYGT1OyhuHhBKflmeot72PdypGSgZzjORgZwdvDPyKUNCZ7kKWRxa1mTKWDJa1oy7Hif6ry2vqBPFK5zSYnamgNAyfPA36d6wxVE8RkMcrmukGHEHc756qcwzkjE8YJOOyPeK1geefTytYxmP8QEOO3ngZX2W0wx85odUSycyZsQjYDtGcZdk9/l0Uea+sOCZ3ZDmOz35aCGnPkCV6FyrQ2Uc7/Fc5zstBOXdSDjbPlhX31exXbb7m1cLT7Hbm1bnucJBHoAwcam5Jd4d4HjgrPU2OOlloPaah0UU/uzOLf8N4AJb8iN/j4KMFdVDV+tyHNa1wLQQQ3GnbywvZudeXFzqqRxL+Z72/vb77/EqN1XsNtvuSMFibPdpKUPlihbGHNe8Ndku2bu0kEEnr4ArUtVvbUyVTZxKDA3JawtBzqDfvbd6wSXGtkzmdzc4yGAN6ZwNsYG5281ikqZ3umc9+TP/iHA97fP1Ryr8IKNnlkjJaoG1lNCyq5jJpnx6246NI3/ADXqa0wstXtfMla7kNk1O06CSfs4656/JR0FZUwxGKOQBpz1aCRnrgkZHogrKnGnmZGhrMEDGGnI+Sb6vYbLPc2rtazQ01LNqcTK0iQFuNDwAcfIj81sSWMxsoy+RwNQ0tI0/YkLdTG/A5H5+CjZq2qma5ss7pGueHkO397fceHU9F6kuNbIXl9S92p4ecno4dCPD0TdVlvBO2zC5NuS1MbQTSiR5qIhDqZjbVIXbegA+ZWeoskNNcqenqKlzIZGOy8gD9Y3ILQTt1GxPcQo9tyrmyyyic65ZGyPJaDlzTkHp5r4y5VzdP8AxDnhri4awHbkYPXOx8OinfV7fmf9Ebbff8x/s2rha2U1JVTh0zTFUsia14G7XNLs7Eju7jgqKWzPX1c8T4pZdTHva9zdIAyBgdOmBtgbLWWKxxb/AITJBSS/iCIioXCIiAIiIAiIgCIiAIiIAiIgCIiAIiIAiIgCIiAIiIAiIgCIiAIiIAiIgCIiAIiIAiIgCIiAIiIAiIgCIiAIiIAiIgCIiAIiIAiIgCIiAIiIAiIgCIiAIiIAiIgCIiAIiIAiIgCIiAIiIAiIgCIiAIiIAiIgCIiAIiIAiIgCIiAIiID/2Q==" alt="Kualanamu International Airport"
+          style="width:100%;height:auto;filter:brightness(1.1)">
+      </div>
+      <div style="font-size:22px;font-weight:900;color:#e2e8f0;letter-spacing:3px">ARUNIKA</div>
+      <div style="font-size:11px;color:#3d4f66;margin-top:4px;line-height:1.6">
+        Aviation Resource and Utilization Network<br>with Intelligent Key Analytics
+      </div>
+      <div style="font-size:10px;color:#1e2d45;margin-top:6px">
+        Bandara Internasional Kualanamu · KNO
+      </div>
+    </div>
+
+    <!-- Login Card -->
+    <div style="background:#0d1117;border:1px solid rgba(30,50,90,.6);
+         border-radius:16px;padding:28px;
+         box-shadow:0 20px 60px rgba(0,0,0,.5)">
+
+      <div style="font-size:15px;font-weight:700;color:#e2e8f0;margin-bottom:6px">
+        Masuk ke SIPRAU
+      </div>
+      <div style="font-size:11px;color:#3d4f66;margin-bottom:24px">
+        Masukkan kredensial untuk mengakses sistem
+      </div>
+
+      <!-- Username -->
+      <div style="margin-bottom:14px">
+        <label style="font-size:11px;font-weight:600;color:#8b949e;display:block;margin-bottom:6px;text-transform:uppercase;letter-spacing:.5px">
+          Username
+        </label>
+        <input id="login-user" type="text" placeholder="Masukkan username"
+          onkeydown="if(event.key==='Enter') doLogin()"
+          style="width:100%;padding:11px 14px;background:#111827;
+                 border:1px solid rgba(30,50,90,.8);border-radius:9px;
+                 color:#e2e8f0;font-size:13px;outline:none;transition:border .2s"
+          onfocus="this.style.borderColor='rgba(59,130,246,.6)'"
+          onblur="this.style.borderColor='rgba(30,50,90,.8)'">
+      </div>
+
+      <!-- Password -->
+      <div style="margin-bottom:8px">
+        <label style="font-size:11px;font-weight:600;color:#8b949e;display:block;margin-bottom:6px;text-transform:uppercase;letter-spacing:.5px">
+          Password
+        </label>
+        <div style="position:relative">
+          <input id="login-pass" type="password" placeholder="Masukkan password"
+            onkeydown="if(event.key==='Enter') doLogin()"
+            style="width:100%;padding:11px 40px 11px 14px;background:#111827;
+                   border:1px solid rgba(30,50,90,.8);border-radius:9px;
+                   color:#e2e8f0;font-size:13px;outline:none;transition:border .2s"
+            onfocus="this.style.borderColor='rgba(59,130,246,.6)'"
+            onblur="this.style.borderColor='rgba(30,50,90,.8)'">
+          <button onclick="togglePassVis()" tabindex="-1"
+            style="position:absolute;right:12px;top:50%;transform:translateY(-50%);
+                   color:#3d4f66;font-size:14px;padding:2px">
+            👁
+          </button>
+        </div>
+      </div>
+
+      <!-- Error message -->
+      <div id="login-err" style="display:none;font-size:11px;color:#f87171;
+           background:rgba(239,68,68,.08);border:1px solid rgba(239,68,68,.2);
+           border-radius:7px;padding:8px 12px;margin-bottom:12px">
+        ❌ Username atau password salah. Coba lagi.
+      </div>
+
+      <!-- Login Button -->
+      <button onclick="doLogin()" id="login-btn"
+        style="width:100%;padding:13px;border-radius:9px;border:none;cursor:pointer;
+               background:linear-gradient(135deg,#1d4ed8,#3b82f6);
+               color:#fff;font-size:13px;font-weight:700;margin-top:8px;
+               transition:opacity .2s;box-shadow:0 4px 16px rgba(59,130,246,.3)">
+        Masuk →
+      </button>
+
+    </div>
+
+    <!-- Footer -->
+    <div style="text-align:center;margin-top:20px;font-size:10px;color:#1e2d45">
+      SIPRAU v5.0 · Ditjen Perhubungan Udara · Angkasa Pura Indonesia
+    </div>
+
+  </div>
+</div>
+
+<script>
+// ── AUTH ──────────────────────────────────────────────────────────
+const USERS = [
+  { username:'arunika', password:'kno123' },
+];
+
+function doLogin(){
+  const u = document.getElementById('login-user').value.trim().toLowerCase();
+  const p = document.getElementById('login-pass').value;
+  const err = document.getElementById('login-err');
+  const btn = document.getElementById('login-btn');
+
+  btn.textContent = 'Memverifikasi...';
+  btn.style.opacity = '0.7';
+
+  setTimeout(()=>{
+    const valid = USERS.find(x => x.username===u && x.password===p);
+    if(valid){
+      // Simpan sesi di sessionStorage (hilang saat browser ditutup)
+      sessionStorage.setItem('siprau_auth', btoa(u + ':' + Date.now()));
+      err.style.display = 'none';
+      // Animasi fade out login screen
+      const ls = document.getElementById('login-screen');
+      ls.style.transition = 'opacity .4s';
+      ls.style.opacity = '0';
+      setTimeout(()=>{ ls.style.display='none'; }, 400);
+    } else {
+      err.style.display = 'block';
+      document.getElementById('login-pass').value = '';
+      document.getElementById('login-pass').focus();
+    }
+    btn.textContent = 'Masuk →';
+    btn.style.opacity = '1';
+  }, 400);
+}
+
+function togglePassVis(){
+  const inp = document.getElementById('login-pass');
+  inp.type = inp.type==='password' ? 'text' : 'password';
+}
+
+function doLogout(){
+  if(!confirm('Yakin ingin keluar dari SIPRAU?')) return;
+  sessionStorage.removeItem('siprau_auth');
+  // Reset form login
+  document.getElementById('login-user').value='';
+  document.getElementById('login-pass').value='';
+  document.getElementById('login-err').style.display='none';
+  // Tampilkan login screen kembali
+  const ls = document.getElementById('login-screen');
+  ls.style.opacity='0';
+  ls.style.display='flex';
+  setTimeout(()=>{
+    ls.style.transition='opacity .3s';
+    ls.style.opacity='1';
+    document.getElementById('login-user').focus();
+  }, 50);
+}
+
+// Cek sesi saat load — jika sudah login sebelumnya di tab ini, skip login
+window.addEventListener('DOMContentLoaded', ()=>{
+  const auth = sessionStorage.getItem('siprau_auth');
+  if(auth){
+    document.getElementById('login-screen').style.display='none';
+  } else {
+    // Focus ke input username
+    setTimeout(()=>{ document.getElementById('login-user').focus(); }, 100);
+  }
+});
+</script>
+
 <div class="app">
 <aside class="sidebar" id="sidebar">
   <div class="sb-logo" style="padding:10px 12px">
@@ -392,6 +561,11 @@ input[type=range]{width:100%;accent-color:var(--blue);cursor:pointer;}
       <button class="btn-teal" onclick="go('import')">📥 Import Data</button>
       <button class="alert-tb" onclick="go('alerts')">🔔 <span id="al-count">4</span><span class="al-dot"></span></button>
       <button class="btn-ghost" onclick="go('tutorial')">🎓 Tutorial</button>
+      <button onclick="doLogout()"
+        style="padding:5px 12px;border-radius:7px;border:1px solid rgba(239,68,68,.3);
+               background:rgba(239,68,68,.08);color:#f87171;font-size:11px;font-weight:600;cursor:pointer">
+        ⏏ Keluar
+      </button>
       <button class="btn-prim" onclick="toggleExportMenu()" id="export-wrap" style="position:relative">
         ↗ Export ▾
         <div id="export-menu" style="display:none;position:absolute;top:calc(100% + 6px);right:0;
