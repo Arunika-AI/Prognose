@@ -6,8 +6,12 @@
 <title>ARUNIKA — Kualanamu International Airport</title>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/chartjs-plugin-datalabels/2.2.0/chartjs-plugin-datalabels.min.js" crossorigin="anonymous"></script>
-
 <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+
+<!-- Firebase SDK v10 (modular compat build — works via CDN tanpa bundler) -->
+<script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-auth-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore-compat.js"></script>
 <style>
 *{box-sizing:border-box;margin:0;padding:0;}
 :root{
@@ -427,71 +431,366 @@ input[type=range]{width:100%;accent-color:var(--blue);cursor:pointer;}
 </div>
 
 <script>
-// ── AUTH ──────────────────────────────────────────────────────────
+// ═══════════════════════════════════════════════════════════════════
+// FIREBASE — CONFIG (inisialisasi ditunda ke window.load)
+// ═══════════════════════════════════════════════════════════════════
+const FB_CONFIG = {
+  apiKey:            "AIzaSyDhTCTKBGeZ_CtqK9_lfNqlXHslicEujYU",
+  authDomain:        "prognosa-data-angkutan-udara.firebaseapp.com",
+  projectId:         "prognosa-data-angkutan-udara",
+  storageBucket:     "prognosa-data-angkutan-udara.firebasestorage.app",
+  messagingSenderId: "1047978787025",
+  appId:             "1:1047978787025:web:a160f72914ac54f9eb85f0"
+};
+
+// ── Variabel global Firebase (diisi saat window.load) ─────────────
+let FB_AUTH = null;
+let FB_DB   = null;
+let FB_ONLINE = false;
+
+const FB_DOC = {
+  db:      () => FB_DB.collection('siprau').doc('db'),
+  targets: () => FB_DB.collection('siprau').doc('targets'),
+  shocks:  () => FB_DB.collection('siprau').doc('shocks'),
+  event:   (key, yr) => FB_DB.collection('siprau_events').doc(`${key}_${yr}`),
+  eventIdx:() => FB_DB.collection('siprau').doc('event_index'),
+};
+
+// ── Inisialisasi Firebase — dijamin jalan setelah semua CDN loaded ─
+function initFirebase(){
+  try {
+    if(typeof firebase === 'undefined'){
+      console.warn('[FB] Firebase SDK tidak ter-load. Mode offline.');
+      updateFbChip('off');
+      return false;
+    }
+    if(!firebase.apps.length){
+      firebase.initializeApp(FB_CONFIG);
+    }
+    FB_AUTH = firebase.auth();
+    FB_DB   = firebase.firestore();
+    // Aktifkan offline persistence (cache Firestore di browser)
+    FB_DB.enablePersistence({ synchronizeTabs: true })
+      .catch(e => console.warn('[FB] Persistence:', e.code));
+    console.log('[FB] Firebase berhasil diinisialisasi.');
+    return true;
+  } catch(e){
+    console.warn('[FB] initFirebase error:', e);
+    updateFbChip('off');
+    return false;
+  }
+}
+
+// ── Sync helpers ───────────────────────────────────────────────────
+async function fbSave(docRef, payload){
+  if(!FB_ONLINE) return false;
+  try {
+    await docRef.set(payload, { merge: true });
+    return true;
+  } catch(e){
+    console.warn('[FB] save error:', e);
+    return false;
+  }
+}
+
+async function fbLoad(docRef){
+  if(!FB_ONLINE) return null;
+  try {
+    const snap = await docRef.get();
+    return snap.exists ? snap.data() : null;
+  } catch(e){
+    console.warn('[FB] load error:', e);
+    return null;
+  }
+}
+
+// ── Update chip status Firebase di topbar ─────────────────────────
+function updateFbChip(state){
+  const el = document.getElementById('chip-fb');
+  if(!el) return;
+  if(state === 'ok')   { el.textContent='☁ Cloud Sync'; el.className='chip chip-g'; }
+  if(state === 'off')  { el.textContent='☁ Offline';    el.className='chip chip-a'; }
+  if(state === 'sync') { el.textContent='☁ Syncing…';   el.className='chip chip-t'; }
+}
+
+// ═══════════════════════════════════════════════════════════════════
+// AUTH — password gate + Firebase Anonymous Sign-in
+// ═══════════════════════════════════════════════════════════════════
 const USERS = [
-  { username:'arunika', password:'kno123' },
+  { username:'arunika',  password:'kno2025' },
+  { username:'operator', password:'kno2025' },
+  { username:'analis',   password:'kno2025' },
 ];
+// ⚠️  Ganti password di atas sebelum distribusi.
+// Ini adalah gate UI saja — Firebase Security Rules adalah lapisan keamanan utama.
 
 function doLogin(){
-  const u = document.getElementById('login-user').value.trim().toLowerCase();
-  const p = document.getElementById('login-pass').value;
+  const u   = document.getElementById('login-user').value.trim().toLowerCase();
+  const p   = document.getElementById('login-pass').value;
   const err = document.getElementById('login-err');
   const btn = document.getElementById('login-btn');
 
-  btn.textContent = 'Memverifikasi...';
+  btn.textContent = 'Memverifikasi…';
   btn.style.opacity = '0.7';
 
-  setTimeout(()=>{
-    const valid = USERS.find(x => x.username===u && x.password===p);
-    if(valid){
-      // Simpan sesi di sessionStorage (hilang saat browser ditutup)
-      sessionStorage.setItem('siprau_auth', btoa(u + ':' + Date.now()));
-      err.style.display = 'none';
-      // Animasi fade out login screen
-      const ls = document.getElementById('login-screen');
-      ls.style.transition = 'opacity .4s';
-      ls.style.opacity = '0';
-      setTimeout(()=>{ ls.style.display='none'; }, 400);
-    } else {
+  // 1. Cek password gate lokal
+  const valid = USERS.find(x => x.username === u && x.password === p);
+  if(!valid){
+    setTimeout(()=>{
+      err.innerHTML = '❌ Username atau password salah. Coba lagi.';
       err.style.display = 'block';
       document.getElementById('login-pass').value = '';
       document.getElementById('login-pass').focus();
-    }
+      btn.textContent = 'Masuk →';
+      btn.style.opacity = '1';
+    }, 400);
+    return;
+  }
+
+  // 2. Simpan identitas lokal
+  sessionStorage.setItem('siprau_auth', btoa(u + ':' + Date.now()));
+  sessionStorage.setItem('siprau_user', u);
+  err.style.display = 'none';
+
+  // 3. Firebase Anonymous Sign-in (non-blocking — app tetap jalan walau gagal)
+  if(FB_AUTH){
+    btn.textContent = 'Menghubungkan Cloud…';
+    FB_AUTH.signInAnonymously()
+      .then(()=>{
+        FB_ONLINE = true;
+        updateFbChip('ok');
+        return syncFromFirebase();
+      })
+      .catch(e=>{
+        console.warn('[FB] sign-in gagal, mode offline:', e);
+        FB_ONLINE = false;
+        updateFbChip('off');
+      })
+      .finally(()=>{
+        fadeOutLoginScreen();
+        btn.textContent = 'Masuk →';
+        btn.style.opacity = '1';
+      });
+  } else {
+    // Firebase tidak tersedia — tetap jalan offline
+    updateFbChip('off');
+    fadeOutLoginScreen();
     btn.textContent = 'Masuk →';
     btn.style.opacity = '1';
-  }, 400);
+  }
+}
+
+function fadeOutLoginScreen(){
+  const ls = document.getElementById('login-screen');
+  ls.style.transition = 'opacity .4s';
+  ls.style.opacity = '0';
+  setTimeout(()=>{ ls.style.display='none'; }, 400);
 }
 
 function togglePassVis(){
   const inp = document.getElementById('login-pass');
-  inp.type = inp.type==='password' ? 'text' : 'password';
+  inp.type = inp.type === 'password' ? 'text' : 'password';
 }
 
 function doLogout(){
   if(!confirm('Yakin ingin keluar dari SIPRAU?')) return;
   sessionStorage.removeItem('siprau_auth');
-  // Reset form login
-  document.getElementById('login-user').value='';
-  document.getElementById('login-pass').value='';
-  document.getElementById('login-err').style.display='none';
-  // Tampilkan login screen kembali
+  sessionStorage.removeItem('siprau_user');
+  if(FB_AUTH) FB_AUTH.signOut().catch(()=>{});
+  FB_ONLINE = false;
+  document.getElementById('login-user').value = '';
+  document.getElementById('login-pass').value = '';
+  document.getElementById('login-err').style.display = 'none';
   const ls = document.getElementById('login-screen');
-  ls.style.opacity='0';
-  ls.style.display='flex';
+  ls.style.opacity = '0';
+  ls.style.display = 'flex';
   setTimeout(()=>{
-    ls.style.transition='opacity .3s';
-    ls.style.opacity='1';
+    ls.style.transition = 'opacity .3s';
+    ls.style.opacity = '1';
     document.getElementById('login-user').focus();
   }, 50);
 }
 
-// Cek sesi saat load — jika sudah login sebelumnya di tab ini, skip login
-window.addEventListener('DOMContentLoaded', ()=>{
+// ═══════════════════════════════════════════════════════════════════
+// FIREBASE SYNC — baca dari cloud, tulis ke localStorage + HIST/STATE
+// ═══════════════════════════════════════════════════════════════════
+
+// Sync dari Firebase → overwrite localStorage jika cloud lebih baru
+async function syncFromFirebase(){
+  updateFbChip('sync');
+  try {
+    // a. DB historis
+    const fbDb = await fbLoad(FB_DOC.db());
+    if(fbDb && fbDb._ts){
+      const localTs = parseInt(localStorage.getItem('siprau_db_ts')||'0');
+      if(fbDb._ts > localTs){
+        const payload = {...fbDb};
+        delete payload._ts;
+        localStorage.setItem('siprau_db', JSON.stringify(payload));
+        localStorage.setItem('siprau_db_ts', String(fbDb._ts));
+      }
+    }
+    // b. Targets
+    const fbTgt = await fbLoad(FB_DOC.targets());
+    if(fbTgt && fbTgt._ts){
+      const localTs = parseInt(localStorage.getItem('siprau_v5_targets_ts')||'0');
+      if(fbTgt._ts > localTs){
+        const payload = {...fbTgt}; delete payload._ts;
+        localStorage.setItem('siprau_v5_targets', JSON.stringify(payload));
+        localStorage.setItem('siprau_v5_targets_ts', String(fbTgt._ts));
+      }
+    }
+    // c. Shocks
+    const fbShk = await fbLoad(FB_DOC.shocks());
+    if(fbShk && fbShk._ts){
+      const localTs = parseInt(localStorage.getItem('siprau_shocks_ts')||'0');
+      if(fbShk._ts > localTs){
+        const payload = {...fbShk}; delete payload._ts;
+        localStorage.setItem('siprau_shocks_custom', JSON.stringify(payload.data||payload));
+        localStorage.setItem('siprau_shocks_ts', String(fbShk._ts));
+      }
+    }
+    // d. Event index + data harian event
+    const fbEvIdx = await fbLoad(FB_DOC.eventIdx());
+    if(fbEvIdx && fbEvIdx.keys){
+      const evKeys = fbEvIdx.keys; // { angleb:[2024,2025], nataru:[2025], ... }
+      for(const [evKey, years] of Object.entries(evKeys)){
+        for(const yr of years){
+          const fbEv = await fbLoad(FB_DOC.event(evKey, yr));
+          if(fbEv && fbEv._ts){
+            const lKey = `siprau_event_${evKey}_${yr}`;
+            const localTs = parseInt(localStorage.getItem(lKey+'_ts')||'0');
+            if(fbEv._ts > localTs){
+              const payload = {...fbEv}; delete payload._ts;
+              localStorage.setItem(lKey, JSON.stringify(payload));
+              localStorage.setItem(lKey+'_ts', String(fbEv._ts));
+            }
+          }
+        }
+      }
+      // Update event_keys index di localStorage
+      const existingKeys = JSON.parse(localStorage.getItem('siprau_event_keys')||'{}');
+      const merged = {...existingKeys};
+      for(const [k,v] of Object.entries(evKeys)){
+        merged[k] = [...new Set([...(merged[k]||[]), ...v])];
+      }
+      localStorage.setItem('siprau_event_keys', JSON.stringify(merged));
+    }
+    updateFbChip('ok');
+    console.log('[FB] Sync from cloud selesai.');
+  } catch(e){
+    console.warn('[FB] syncFromFirebase error:', e);
+    updateFbChip('off');
+  }
+}
+
+// Sync ke Firebase — dipanggil setiap kali ada perubahan data
+async function fbPushDB(){
+  if(!FB_ONLINE) return;
+  updateFbChip('sync');
+  try{
+    const raw = localStorage.getItem('siprau_db');
+    if(!raw) return;
+    const data = JSON.parse(raw);
+    const ts = Date.now();
+    await FB_DOC.db().set({...data, _ts: ts});
+    localStorage.setItem('siprau_db_ts', String(ts));
+    updateFbChip('ok');
+  } catch(e){ console.warn('[FB] pushDB error:', e); updateFbChip('off'); }
+}
+
+async function fbPushTargets(){
+  if(!FB_ONLINE) return;
+  updateFbChip('sync');
+  try{
+    const raw = localStorage.getItem('siprau_v5_targets');
+    if(!raw) return;
+    const data = JSON.parse(raw);
+    const ts = Date.now();
+    await FB_DOC.targets().set({...data, _ts: ts});
+    localStorage.setItem('siprau_v5_targets_ts', String(ts));
+    updateFbChip('ok');
+  } catch(e){ console.warn('[FB] pushTargets error:', e); updateFbChip('off'); }
+}
+
+async function fbPushShocks(){
+  if(!FB_ONLINE) return;
+  updateFbChip('sync');
+  try{
+    const raw = localStorage.getItem('siprau_shocks_custom');
+    if(!raw) return;
+    const data = JSON.parse(raw);
+    const ts = Date.now();
+    await FB_DOC.shocks().set({data, _ts: ts});
+    localStorage.setItem('siprau_shocks_ts', String(ts));
+    updateFbChip('ok');
+  } catch(e){ console.warn('[FB] pushShocks error:', e); updateFbChip('off'); }
+}
+
+async function fbPushEvent(evKey, yr){
+  if(!FB_ONLINE) return;
+  updateFbChip('sync');
+  try{
+    const lKey = `siprau_event_${evKey}_${yr}`;
+    const raw  = localStorage.getItem(lKey);
+    if(!raw) return;
+    const data = JSON.parse(raw);
+    const ts   = Date.now();
+    await FB_DOC.event(evKey, yr).set({...data, _ts: ts});
+    localStorage.setItem(lKey+'_ts', String(ts));
+    // Update event index di Firestore
+    const idxSnap = await FB_DOC.eventIdx().get();
+    const idx = idxSnap.exists ? idxSnap.data() : {keys:{}};
+    if(!idx.keys) idx.keys = {};
+    if(!idx.keys[evKey]) idx.keys[evKey] = [];
+    if(!idx.keys[evKey].includes(yr)) idx.keys[evKey].push(yr);
+    await FB_DOC.eventIdx().set(idx);
+    updateFbChip('ok');
+  } catch(e){ console.warn('[FB] pushEvent error:', e); updateFbChip('off'); }
+}
+
+// ─── Manual Sync Button (dipanggil dari topbar) ───────────────────
+async function fbManualSync(){
+  if(!FB_ONLINE){
+    alert('Tidak terhubung ke cloud. Periksa koneksi internet dan coba login ulang.');
+    return;
+  }
+  await syncFromFirebase();
+  // Reload app state dari localStorage yang baru
+  DB.load();
+  STATE.isImported = DB.hasData;
+  updateTopBar();
+  go(STATE.currentPage || 'exec');
+  showToast('☁ Data berhasil disinkronisasi dari cloud.', 'teal');
+}
+
+// ── Cek sesi saat load (window.load = semua CDN pasti sudah siap) ──
+window.addEventListener('load', ()=>{
+  // 1. Inisialisasi Firebase (aman karena CDN sudah selesai)
+  const fbReady = initFirebase();
+
   const auth = sessionStorage.getItem('siprau_auth');
   if(auth){
-    document.getElementById('login-screen').style.display='none';
+    // Sudah login di tab ini — coba reconnect Firebase tanpa tampil login screen
+    document.getElementById('login-screen').style.display = 'none';
+    if(fbReady && FB_AUTH){
+      FB_AUTH.signInAnonymously()
+        .then(()=>{
+          FB_ONLINE = true;
+          updateFbChip('ok');
+          syncFromFirebase().then(()=>{
+            if(typeof DB !== 'undefined'){
+              DB.load();
+              if(typeof STATE !== 'undefined') STATE.isImported = DB.hasData;
+              if(typeof updateTopBar === 'function') updateTopBar();
+            }
+          });
+        })
+        .catch(e=>{ console.warn('[FB] reconnect gagal:', e); updateFbChip('off'); });
+    } else {
+      updateFbChip('off');
+    }
   } else {
-    // Focus ke input username
     setTimeout(()=>{ document.getElementById('login-user').focus(); }, 100);
   }
 });
@@ -558,6 +857,7 @@ window.addEventListener('DOMContentLoaded', ()=>{
     <div class="tb-right">
       <div class="chip" id="chip-period">📅 2023–2024</div>
       <div class="chip chip-a" id="chip-mode">● Demo</div>
+      <div class="chip chip-a" id="chip-fb" onclick="fbManualSync()" title="Klik untuk sync manual" style="cursor:pointer">☁ Offline</div>
       <button class="btn-teal" onclick="go('import')">📥 Import Data</button>
       <button class="alert-tb" onclick="go('alerts')">🔔 <span id="al-count">4</span><span class="al-dot"></span></button>
       <button class="btn-ghost" onclick="go('tutorial')">🎓 Tutorial</button>
@@ -772,6 +1072,8 @@ function saveShockCustom(idx, field, val){
     localStorage.setItem('siprau_shocks_custom', JSON.stringify(custom));
     // Update live SHOCKS array
     SHOCKS[idx][field] = val;
+    // ── Firebase push ──
+    if(typeof fbPushShocks === 'function') fbPushShocks();
   }catch(e){}
 }
 
@@ -949,6 +1251,8 @@ const DB = {
         histCargo:Object.fromEntries(Object.entries(HIST.cargo).filter(([,v])=>Array.isArray(v)&&v.some(x=>x>0))),
       });
       localStorage.setItem('siprau_db', data);
+      // ── Firebase push (non-blocking) ──
+      if(typeof fbPushDB === 'function') fbPushDB();
     }catch(e){ console.warn('DB.save failed:', e); }
   },
   // Muat dari localStorage
@@ -3076,6 +3380,8 @@ function updateTarget(key, val){
 // ── Simpan target ke localStorage dan refresh dashboard ──────────
 function saveTargets(){
   try{ localStorage.setItem('siprau_v5_targets', JSON.stringify(STATE.targets)); }catch(e){}
+  // ── Firebase push ──
+  if(typeof fbPushTargets === 'function') fbPushTargets();
   // Tutup form lalu refresh exec
   killCharts();
   go('exec');
@@ -3475,6 +3781,8 @@ function uploadEventFile(event, eventKey){
           JSON.stringify(Object.keys(EVENT_DAILY).reduce((acc,k)=>{
             acc[k]=Object.keys(EVENT_DAILY[k]).map(Number); return acc;
           },{})));
+        // ── Firebase push ──
+        if(typeof fbPushEvent === 'function') fbPushEvent(eventKey, yr);
       }catch(e){ console.warn('Gagal simpan event data ke localStorage:', e); }
 
       const paxRows = parsed.pax.length;  // total baris H-label (termasuk yang kosong)
@@ -8096,6 +8404,37 @@ function dpStartAutoUpdate(){
   // Setiap 30 menit
   if(DP_TIMER_ID) clearInterval(DP_TIMER_ID);
   DP_TIMER_ID = setInterval(dpAutoRefresh, 30 * 60 * 1000);
+}
+
+// UTILITIES — TOAST NOTIFICATION
+// ═══════════════════════════════════════════════════════════════════
+function showToast(msg, type='teal'){
+  let t = document.getElementById('siprau-toast');
+  if(!t){
+    t = document.createElement('div');
+    t.id = 'siprau-toast';
+    t.style.cssText = `
+      position:fixed;bottom:24px;right:24px;z-index:99999;
+      padding:10px 18px;border-radius:10px;font-size:12px;font-weight:600;
+      box-shadow:0 6px 24px rgba(0,0,0,.4);transition:opacity .4s;
+      font-family:'Segoe UI',system-ui,sans-serif;pointer-events:none;
+    `;
+    document.body.appendChild(t);
+  }
+  const colors = {
+    teal:  {bg:'rgba(20,184,166,.15)',  border:'rgba(20,184,166,.4)',  color:'#2dd4bf'},
+    green: {bg:'rgba(34,197,94,.12)',   border:'rgba(34,197,94,.35)',  color:'#4ade80'},
+    red:   {bg:'rgba(239,68,68,.12)',   border:'rgba(239,68,68,.35)',  color:'#f87171'},
+    amber: {bg:'rgba(245,158,11,.12)',  border:'rgba(245,158,11,.35)', color:'#fbbf24'},
+  };
+  const c = colors[type] || colors.teal;
+  t.style.background = c.bg;
+  t.style.border = `1px solid ${c.border}`;
+  t.style.color = c.color;
+  t.textContent = msg;
+  t.style.opacity = '1';
+  clearTimeout(t._timer);
+  t._timer = setTimeout(()=>{ t.style.opacity='0'; }, 3200);
 }
 
 // INIT
